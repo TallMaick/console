@@ -1,7 +1,40 @@
+# AWSTemplateFormatVersion: '2010-09-09'
+# Description: EC2 creada desde GitHub Actions
+
+# Resources:
+
+#   MyEC2:
+#     Type: AWS::EC2::Instance
+#     Properties:
+#       AvailabilityZone: us-east-1a
+#       ImageId: ami-0cca150d127c2216f
+#       InstanceType: t3.micro
+
+#       Tags:
+#         - Key: Name
+#           Value: EC2-GitHubActions
+
+# Outputs:
+
+#   InstanceId:
+#     Value: !Ref MyEC2
+
+
 AWSTemplateFormatVersion: '2010-09-09'
-Description: EC2 creada desde GitHub Actions
+Description: EC2 creada desde GitHub Actions con Security Group HTTP y User Data
 
 Resources:
+
+  # Grupo de Seguridad para permitir tráfico HTTP por el puerto 80
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir trafico HTTP web
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
 
   MyEC2:
     Type: AWS::EC2::Instance
@@ -9,7 +42,18 @@ Resources:
       AvailabilityZone: us-east-1a
       ImageId: ami-0cca150d127c2216f
       InstanceType: t3.micro
-
+      # Asociamos el Grupo de Seguridad creado arriba
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      # User Data para instalar Apache y mostrar el mensaje
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          echo "hola mundo maicol bien" > /var/www/html/index.html
       Tags:
         - Key: Name
           Value: EC2-GitHubActions
